@@ -127,6 +127,11 @@ reconstructed = "".join([num_to_char[token.item()] for token in text_labels])
 print(f"Original Text from File:  {original_text}")
 print(f"Reconstructed from Tokens: {reconstructed}")
 
+
+
+
+
+
 """-----------------------------
 
 # Data Pipeline
@@ -317,4 +322,105 @@ def collate_fn(batch):
     labels_tensor = torch.stack(padded_labels, dim=0)
     
     return videos_tensor, labels_tensor
+
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+model = SimpleLipNet(num_classes=len(vocab)).to(device)
+
+optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-5)
+scheduler = optim.lr_scheduler.OneCycleLR(
+    optimizer, 
+    max_lr=1e-3, 
+    epochs=100, 
+    steps_per_epoch=len(lip_reading_dataset) // 32 + 1,
+    pct_start=0.1,  # 10% warmup
+    anneal_strategy='cos' # gradual decreasing the learning rate over time
+)
+
+train_loader = DataLoader(lip_reading_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+val_loader = DataLoader(lip_reading_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
+
+# Measure of the similarity between two strings
+def levenshtein_distance(s1, s2): 
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1): # index and current character in s1
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1 # insert c2 into s1
+            deletions = current_row[j] + 1 # delete c1 from s1
+            substitutions = previous_row[j] + (c1 != c2) # replace c1 with c2
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]
+
+def calculate_accuracy(model, dataloader, device):
+    model.eval()
+    total_cer = 0
+    total_samples = 0
+    
+    with torch.no_grad():
+        for videos, labels in dataloader:
+            videos = videos.to(device)
+            outputs = model(videos)
+            predictions = decode_predictions(outputs)
+            
+            for i, pred in enumerate(predictions):
+                target = labels[i][labels[i] != 0]
+                target_text = "".join([num_to_char[c.item()] for c in target])
+                
+                # Character Error Rate (CER)
+                if len(target_text) > 0:
+                    cer = levenshtein_distance(pred, target_text) / len(target_text)
+                    total_cer += cer
+                    total_samples += 1
+    
+    avg_cer = (total_cer / total_samples * 100) if total_samples > 0 else 100
+    accuracy = 100 - avg_cer  # Convert to accuracy (100% - CER%)
+    return max(0, accuracy)  # non-negative
+
+num_epochs = 100  
+
+for epoch in range(num_epochs):
+    model.train()
+    total_loss = 0
+
+    for videos, labels in train_loader:
+        videos = videos.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(videos)
+        loss = ctc_loss(outputs, labels)
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)  # to prevent exploding gradients
+        optimizer.step()
+        scheduler.step()  
+
+        total_loss += loss.item()
+
+    avg_loss = total_loss / len(train_loader)
+    accuracy = calculate_accuracy(model, val_loader, device)
+
+    print(f"Epoch {epoch+1} | Loss: {avg_loss:.4f} | Accuracy: {accuracy:.2f}% | LR: {optimizer.param_groups[0]['lr']:.6f}")
+    
+    if (epoch + 1) % 3 == 0:
+        produce_example(model, val_loader, num_to_char, device)
+
+# Save the trained model
+torch.save({
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'vocab': vocab,
+    'char_to_num': char_to_num,
+    'num_to_char': num_to_char,
+}, 'lipread_model.pth')
+print("Model saved to lipread_model.pth")
+
 
