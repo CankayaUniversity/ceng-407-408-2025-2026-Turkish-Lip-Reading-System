@@ -219,3 +219,102 @@ class SimpleLipNet(nn.Module):
         x, _ = self.gru2(x)
         x = self.fc(x)
         return x
+
+def lr_lambda_func(epoch):
+    if epoch < 30:
+        return 1.0
+    else:
+        return torch.exp(torch.tensor(-0.1)).item()
+
+ctc_loss_fn = nn.CTCLoss(blank=0, zero_infinity=True, reduction='mean')
+
+def ctc_loss(outputs, labels):
+    B,T,C = outputs.shape
+    log_probs = outputs.permute(1,0,2)
+    log_probs = F.log_softmax(log_probs, dim=2)
+
+    input_lengths = torch.full(
+        size=(B,),
+        fill_value=T,
+        dtype=torch.long,
+        device=outputs.device
+    )
+
+    target_lengths = torch.sum(labels != 0, dim = 1)
+    targets = labels[labels!=0]
+
+    loss = ctc_loss_fn(log_probs, targets, input_lengths, target_lengths)
+    return loss
+
+def decode_predictions(yhat):
+    """
+    yhat: (B, T, C)
+    """
+    argmax = torch.argmax(yhat, dim=2)
+    decoded = []
+
+    for seq in argmax:
+        prev = None
+        chars_out = []
+        for idx in seq:
+            idx = idx.item()
+            if idx != 0 and idx != prev:
+                chars_out.append(num_to_char[idx])
+            prev = idx
+        decoded.append("".join(chars_out))
+
+    return decoded
+
+def produce_example(model, dataloader, num_to_char, device):
+    model.eval()
+
+    with torch.no_grad():
+        data = next(iter(dataloader))
+        videos, labels = data
+        videos = videos.to(device)
+
+        yhat = model(videos)
+        predictions = decode_predictions(yhat)
+
+
+        target = labels[0][labels[0] != 0]
+        target_text = "".join([num_to_char[c.item()] for c in target])
+
+        print(f"  Original:  {target_text}")
+        print(f"  Predicted: {predictions[0]}")
+        print("-" * 50)
+
+import torch.optim as optim
+from torch.utils.data import DataLoader
+
+# collate function to pad videos and labels to the same length.
+def collate_fn(batch):
+    videos, labels = zip(*batch) # unpacks the list of tuples 
+    
+    # Pad videos (with zeros) to max frame count in batch
+    max_frames = max(v.shape[0] for v in videos)
+    padded_videos = []
+    for v in videos:
+        if v.shape[0] < max_frames:
+            pad_size = max_frames - v.shape[0]
+            padding = torch.zeros(pad_size, v.shape[1], v.shape[2])
+            v = torch.cat([v, padding], dim=0)
+        padded_videos.append(v)
+    
+    # (B, T, H, W) -> (B, 1, T, H, W) (1 is for grayscale channel)
+    videos_tensor = torch.stack(padded_videos, dim=0).unsqueeze(1)
+    
+    # Pad labels (with zeros) to max label length in batch
+    max_label_len = max(l.shape[0] for l in labels)
+    padded_labels = []
+    for l in labels:
+        if l.shape[0] < max_label_len:
+            pad_size = max_label_len - l.shape[0]
+            padding = torch.zeros(pad_size, dtype=l.dtype)
+            l = torch.cat([l, padding], dim=0)
+        padded_labels.append(l)
+    
+    labels_tensor = torch.stack(padded_labels, dim=0)
+    
+    return videos_tensor, labels_tensor
+
