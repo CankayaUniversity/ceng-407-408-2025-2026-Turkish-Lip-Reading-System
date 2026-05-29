@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turkish Lip Reading System — CENG 408</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0A0A0F;
+    --bg2: #111118;
+    --bg3: #16161F;
+    --surface: #1C1C28;
+    --surface2: #23233A;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #6C63FF;
+    --accent2: #A78BFA;
+    --teal: #2DD4BF;
+    --coral: #FF6B6B;
+    --amber: #FBBF24;
+    --text: #F0EFF8;
+    --text2: #9A98B0;
+    --text3: #5A5870;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --r: 12px;
+    --r2: 20px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 150px 150px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  * { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 4rem;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent2); }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 2.5rem;
+  }
+  nav ul a {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text2);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  nav ul a:hover { color: var(--text); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 800px;
+    height: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    background: radial-gradient(ellipse at center, rgba(108,99,255,0.18) 0%, rgba(167,139,250,0.08) 40%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(108,99,255,0.12);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    color: var(--accent2);
+    letter-spacing: 0.06em;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.5; transform:scale(0.8); }
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    max-width: 900px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  h1 .accent { color: var(--accent2); }
+  h1 .teal { color: var(--teal); }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text2);
+    max-width: 620px;
+    margin: 1.75rem auto 2.75rem;
+    font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.75rem 1.75rem;
+    border-radius: 100px;
+    font-family: var(--font-body);
+    font-size: 0.925rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 40px rgba(108,99,255,0.3);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    justify-content: center;
+    margin-top: 5rem;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .hero-stat-num {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .hero-stat-num span { color: var(--accent2); }
+  .hero-stat-label {
+    font-size: 0.8rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: 6rem 4rem; }
+  .section-inner { max-width: 1100px; margin: 0 auto; }
+
+  .section-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .section-intro {
+    font-size: 1.05rem;
+    color: var(--text2);
+    max-width: 640px;
+    margin-bottom: 3.5rem;
+    font-weight: 300;
+  }
+
+  /* ── PIPELINE ── */
+  .pipeline {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pipeline-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+  }
+
+  .pipeline-step {
+    padding: 2rem 1.5rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .pipeline-step:last-child { border-right: none; }
+
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .step-arrow {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: var(--text3);
+    font-size: 1rem;
+  }
+
+  /* ── MODEL CARDS ── */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 1.75rem;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: default;
+  }
+  .model-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-4px);
+  }
+  .model-card.best {
+    border-color: rgba(108,99,255,0.4);
+    background: linear-gradient(145deg, rgba(108,99,255,0.08), var(--surface));
+  }
+
+  .model-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+  .badge-best { background: rgba(108,99,255,0.15); color: var(--accent2); border: 1px solid rgba(108,99,255,0.3); }
+  .badge-hybrid { background: rgba(45,212,191,0.1); color: var(--teal); border: 1px solid rgba(45,212,191,0.25); }
+  .badge-standard { background: rgba(255,255,255,0.05); color: var(--text3); border: 1px solid var(--border); }
+
+  .model-name {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .model-desc {
+    font-size: 0.85rem;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+  }
+
+  .model-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .metric {
+    background: var(--bg2);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+  }
+  .metric-label {
+    font-size: 0.68rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .metric-val {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .val-purple { color: var(--accent2); }
+  .val-teal   { color: var(--teal); }
+  .val-amber  { color: var(--amber); }
+  .val-coral  { color: var(--coral); }
+
+  /* ── BAR CHART ── */
+  .chart-section { background: var(--bg2); }
+
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 700px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 60px;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .bar-label {
+    font-size: 0.82rem;
+    color: var(--text2);
+    text-align: right;
+    font-family: var(--font-mono);
+  }
+
+  .bar-track {
+    height: 10px;
+    background: var(--surface);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+
+  .bar-val {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  /* ── CHALLENGES ── */
+  .challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .challenge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 1.5rem;
+  }
+  .challenge-icon {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+  .challenge-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .challenge-desc {
+    font-size: 0.82rem;
+    color: var(--text2);
+    line-height: 1.65;
+  }
+
+  /* ── TEAM ── */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1rem;
+  }
+
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .team-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-3px);
+  }
+
+  .avatar {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin: 0 auto 0.75rem;
+    border: 2px solid var(--border2);
+  }
+
+  .team-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .team-id {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text3);
+  }
+
+  /* ── TECH STACK ── */
+  .tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+  }
+  .tech-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text2);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .tech-pill:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── DATASET ── */
+  .dataset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  .dataset-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r2);
+    padding: 1.75rem;
+  }
+  .dataset-num {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .dataset-label {
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+  }
+  .dataset-detail {
+    font-size: 0.82rem;
+    color: var(--text3);
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  .dataset-detail strong { color: var(--text2); font-weight: 400; }
+
+  /* ── FUTURE ── */
+  .future-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 700px;
+  }
+  .future-item {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem 1.5rem;
+  }
+  .future-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 7px;
+  }
+  .future-item-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .future-item-desc {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem 4rem;
+    text-align: center;
+    color: var(--text3);
+    font-size: 0.82rem;
+  }
+  footer strong { color: var(--text2); font-weight: 400; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 4rem;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">TLR<span>.</span>system</a>
+  <ul>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#models">Modeller</a></li>
+    <li><a href="#results">Sonuçlar</a></li>
+    <li><a href="#dataset">Veri Seti</a></li>
+    <li><a href="#team">Ekip</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">CENG 408 · Çankaya Üniversitesi · 2025</div>
+  <h1>Türkçe<br><span class="accent">Dudak Okuma</span><br><span class="teal">Sistemi</span></h1>
+  <p class="hero-sub">
+    Derin öğrenme ve transformer mimarileri kullanarak geliştirilmiş, 
+    görsel konuşma tanıma sistemi. 55 Türkçe kelime, 5 farklı model.
+  </p>
+  <div class="hero-cta">
+    <a href="#models" class="btn btn-primary">Modelleri İncele →</a>
+    <a href="#results" class="btn btn-outline">Sonuçlar</a>
+  </div>
+  <div class="hero-stats">
+    <div>
+      <div class="hero-stat-num">80<span>%</span></div>
+      <div class="hero-stat-label">En İyi Doğrulama</div>
+    </div>
+    <div>
+      <div class="hero-stat-num">55</div>
+      <div class="hero-stat-label">Türkçe Kelime</div>
+    </div>
+    <div>
+      <div class="hero-stat-num">5</div>
+      <div class="hero-stat-label">Mimari Test</div>
+    </div>
+    <div>
+      <div class="hero-stat-num">74</div>
+      <div class="hero-stat-label">Katılımcı</div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline" id="pipeline">
+  <div class="section-inner">
+    <div class="section-tag">// sistem mimarisi</div>
+    <h2>Uçtan Uca Pipeline</h2>
+    <p class="section-intro">Ham video girdisinden rafine edilmiş cümle çıktısına kadar her adım entegre bir bütün olarak çalışır.</p>
+    <div class="pipeline-steps">
+      <div class="pipeline-step">
+        <div class="step-num">01</div>
+        <div class="step-icon" style="background:rgba(108,99,255,0.12); color:var(--accent2);">📹</div>
+        <div class="step-title">Ham Video Girdi</div>
+        <div class="step-desc">25/30 FPS normalize edilmiş ön-yüz konuşma videosu</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">02</div>
+        <div class="step-icon" style="background:rgba(45,212,191,0.1); color:var(--teal);">🎯</div>
+        <div class="step-title">Ön İşleme</div>
+        <div class="step-desc">MediaPipe yüz tespiti, dudak ROI çıkarımı, 64×64 veya 112×112 ölçekleme</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">03</div>
+        <div class="step-icon" style="background:rgba(251,191,36,0.1); color:var(--amber);">🧩</div>
+        <div class="step-title">Özellik Çıkarımı</div>
+        <div class="step-desc">3D CNN / ViT tabanlı uzaysal-zamansal temsil öğrenimi</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">04</div>
+        <div class="step-icon" style="background:rgba(255,107,107,0.1); color:var(--coral);">⚡</div>
+        <div class="step-title">Transformer Kodlama</div>
+        <div class="step-desc">Self-attention ile küresel zamansal bağımlılık modelleme</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">05</div>
+        <div class="step-icon" style="background:rgba(167,139,250,0.12); color:var(--accent2);">🔤</div>
+        <div class="step-title">Sınıflandırma</div>
+        <div class="step-desc">55 kelime üzerinden Softmax olasılık dağılımı</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">06</div>
+        <div class="step-icon" style="background:rgba(45,212,191,0.1); color:var(--teal);">🤖</div>
+        <div class="step-title">LLM Refinement</div>
+        <div class="step-desc">Dil modeli ile sözdizimsel ve semantik rafine çıktı</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section id="models">
+  <div class="section-inner">
+    <div class="section-tag">// karşılaştırmalı analiz</div>
+    <h2>Test Edilen Modeller</h2>
+    <p class="section-intro">Beş farklı derin öğrenme mimarisi aynı veri seti üzerinde eğitilip karşılaştırıldı.</p>
+    <div class="models-grid">
+
+      <!-- 3D CNN + Conformer -->
+      <div class="model-card best">
+        <div class="model-badge badge-best">⭐ En İyi Performans</div>
+        <div class="model-name">3D CNN + Conformer</div>
+        <div class="model-desc">Yerel uzaysal-zamansal özellik çıkarımı için 3D evrişimli katmanlar ve uzun menzilli bağımlılıklar için Conformer bloğu sinerji içinde çalışır.</div>
+        <div class="model-metrics">
+          <div class="metric">
+            <div class="metric-label">Doğrulama</div>
+            <div class="metric-val val-purple">80.67%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">F1 Score</div>
+            <div class="metric-val val-teal">80.81%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Precision</div>
+            <div class="metric-val val-amber">83.26%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Recall</div>
+            <div class="metric-val val-coral">80.67%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hybrid ConvNeXt -->
+      <div class="model-card">
+        <div class="model-badge badge-hybrid">Hibrit</div>
+        <div class="model-name">Hybrid ConvNeXt + Transformer</div>
+        <div class="model-desc">ConvNeXt-Tiny uzaysal omurga ve 4 katmanlı Transformer kodlayıcı. İki aşamalı eğitim: dondurulmuş başlatma → stratejik ince ayar.</div>
+        <div class="model-metrics">
+          <div class="metric">
+            <div class="metric-label">Doğrulama</div>
+            <div class="metric-val val-teal">61.21%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Top-5</div>
+            <div class="metric-val val-purple">84.74%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">F1 Score</div>
+            <div class="metric-val val-amber">57.15%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Eğitim Acc</div>
+            <div class="metric-val val-coral">96.44%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ResNet18 -->
+      <div class="model-card">
+        <div class="model-badge badge-standard">Çift Akışlı</div>
+        <div class="model-name">ResNet18 + 3D CNN + Transformer</div>
+        <div class="model-desc">RGB akışı (ResNet-18) ve hareket akışı (MotionCNN) paralel özellik çıkarımı. Öğrenilebilir ağırlıklı füzyon ile 256 boyutlu gömme.</div>
+        <div class="model-metrics">
+          <div class="metric">
+            <div class="metric-label">Doğrulama</div>
+            <div class="metric-val val-amber">49.70%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Top-3</div>
+            <div class="metric-val val-teal">68.33%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">F1 Score</div>
+            <div class="metric-val val-purple">51.17%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Precision</div>
+            <div class="metric-val val-coral">62.97%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ViViT -->
+      <div class="model-card">
+        <div class="model-badge badge-standard">Video ViT</div>
+        <div class="model-name">ViViT</div>
+        <div class="model-desc">vit_small_patch16_224 uzaysal omurga ile özel TransformerEncoder zamansal dinamikleri yakalamak için kombine edildi. 50 frame sabit pencere.</div>
+        <div class="model-metrics">
+          <div class="metric">
+            <div class="metric-label">Doğrulama</div>
+            <div class="metric-val val-coral">45.43%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">F1 Score</div>
+            <div class="metric-val val-amber">38%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Eğitim Acc</div>
+            <div class="metric-val val-purple">80.50%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Epok</div>
+            <div class="metric-val val-teal">20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DINOv2 -->
+      <div class="model-card">
+        <div class="model-badge badge-standard">Self-Supervised</div>
+        <div class="model-name">DINOv2 (ViT-Small/14)</div>
+        <div class="model-desc">Büyük ölçekli self-supervised ön eğitim. İki aşamalı: Temporal Head başlatma (39 epok) + son 4 blok ince ayar (8 epok).</div>
+        <div class="model-metrics">
+          <div class="metric">
+            <div class="metric-label">Doğrulama</div>
+            <div class="metric-val val-coral">40.51%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Recall@5</div>
+            <div class="metric-val val-teal">69.13%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">F1 Score</div>
+            <div class="metric-val val-purple">37.32%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Embed Dim</div>
+            <div class="metric-val val-amber">384</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- RESULTS BAR CHART -->
+<section class="chart-section" id="results">
+  <div class="section-inner">
+    <div class="section-tag">// performans karşılaştırması</div>
+    <h2>Doğrulama Doğruluğu</h2>
+    <p class="section-intro">55 sınıflı Türkçe dudak okuma veri seti üzerinde beş mimari karşılaştırması.</p>
+
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">3D CNN + Conformer</div>
+        <div class="bar-track"><div class="bar-fill" style="width:80.67%; background:linear-gradient(90deg, var(--accent), var(--accent2));"></div></div>
+        <div class="bar-val">80.67%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ConvNeXt + Transformer</div>
+        <div class="bar-track"><div class="bar-fill" style="width:61.21%; background:linear-gradient(90deg, var(--teal), #a5f3fc);"></div></div>
+        <div class="bar-val">61.21%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ResNet18 + 3DCNN + Tr.</div>
+        <div class="bar-track"><div class="bar-fill" style="width:49.70%; background:linear-gradient(90deg, var(--amber), #fde68a);"></div></div>
+        <div class="bar-val">49.70%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ViViT</div>
+        <div class="bar-track"><div class="bar-fill" style="width:45.43%; background:linear-gradient(90deg, var(--coral), #fca5a5);"></div></div>
+        <div class="bar-val">45.43%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">DINOv2 (ViT-Small/14)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:40.51%; background:linear-gradient(90deg, #ec4899, #f9a8d4);"></div></div>
+        <div class="bar-val">40.51%</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 3.5rem;">
+      <div class="section-tag">// convnext top-k doğruluğu</div>
+      <p style="color:var(--text2); font-size:0.9rem; margin: 1rem 0 1.5rem;">En iyi hibrit modelin Top-K performansı, asistif teknoloji uygulamaları için oldukça umut verici.</p>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+        <div class="metric" style="flex:1; min-width:120px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:1.25rem; text-align:center;">
+          <div class="metric-label" style="font-size:0.75rem; margin-bottom:8px;">Top-1</div>
+          <div class="metric-val val-purple" style="font-size:2rem;">55.66%</div>
+        </div>
+        <div class="metric" style="flex:1; min-width:120px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:1.25rem; text-align:center;">
+          <div class="metric-label" style="font-size:0.75rem; margin-bottom:8px;">Top-2</div>
+          <div class="metric-val val-teal" style="font-size:2rem;">70.77%</div>
+        </div>
+        <div class="metric" style="flex:1; min-width:120px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:1.25rem; text-align:center;">
+          <div class="metric-label" style="font-size:0.75rem; margin-bottom:8px;">Top-3</div>
+          <div class="metric-val val-amber" style="font-size:2rem;">78.36%</div>
+        </div>
+        <div class="metric" style="flex:1; min-width:120px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:1.25rem; text-align:center;">
+          <div class="metric-label" style="font-size:0.75rem; margin-bottom:8px;">Top-5</div>
+          <div class="metric-val val-coral" style="font-size:2rem;">84.74%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CHALLENGES -->
+<section>
+  <div class="section-inner">
+    <div class="section-tag">// zorluklar</div>
+    <h2>Temel Sorunlar</h2>
+    <p class="section-intro">Türkçe dudak okuma sistemleri eşsiz dilsel ve teknik güçlüklerle yüzleşmek zorundadır.</p>
+    <div class="challenges-grid">
+      <div class="challenge-card">
+        <div class="challenge-icon">🎭</div>
+        <div class="challenge-title">Viseme Belirsizliği</div>
+        <div class="challenge-desc">Farklı fonemler görsel olarak özdeş görünebilir. "ben", "bir", "biz" gibi kelimeler aynı labial /b/ sesiyle başlar ve ilk görsel ipuçları birbiriyle çakışır.</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-icon">🔤</div>
+        <div class="challenge-title">Türkçe Dilbilgisi</div>
+        <div class="challenge-desc">Eklemeli yapı, sesli uyum kuralları, zengin ek zinciri ve bölgesel ağızlar modelin genelleme kapasitesini zorlar.</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-icon">📦</div>
+        <div class="challenge-title">Sınırlı Veri</div>
+        <div class="challenge-desc">Türkçeye özgü dudak okuma veri setleri küresel standartların çok gerisindedir. Tüm veri seti proje kapsamında özel olarak kayıt altına alındı.</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-icon">⏱️</div>
+        <div class="challenge-title">Kısa Kelime Dinamiği</div>
+        <div class="challenge-desc">"ve", "bir" gibi az karelere sahip kısa kelimeler, zamansal bağlamı yetersiz bıraktığından modelin sınıflandırması güçleşir.</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-icon">🎥</div>
+        <div class="challenge-title">Gerçek Dünya Koşulları</div>
+        <div class="challenge-desc">Değişken aydınlatma, kamera açısı ve konuşmacı çeşitliliği kararlı bir dudak tespiti ve ROI çıkarımı gerektirir.</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-icon">💻</div>
+        <div class="challenge-title">Hesaplama Yükü</div>
+        <div class="challenge-desc">Video tabanlı self-attention mekanizmaları yüksek GPU belleği tüketir; bulut tabanlı eğitim ortamları zorunlu hale gelmiştir.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DATASET -->
+<section id="dataset">
+  <div class="section-inner">
+    <div class="section-tag">// veri seti</div>
+    <h2>Eğitim Verisi</h2>
+    <p class="section-intro">İki farklı kaynak, iki farklı test ortamı. Kontrollü laboratuvar verisi ve gerçek dünya senaryoları paralel olarak değerlendirildi.</p>
+    <div class="dataset-grid">
+      <div class="dataset-card">
+        <div class="dataset-num" style="color:var(--accent2);">11K+</div>
+        <div class="dataset-label">Video örneği · Özel veri seti</div>
+        <div class="dataset-detail">
+          <strong>74 katılımcı</strong> ile kayıt altına alındı<br>
+          <strong>55 farklı</strong> Türkçe kelime<br>
+          Kelime başına <strong>3 tekrar</strong><br>
+          Konuşmacıdan bağımsız (speaker-independent) bölme<br>
+          Yalnızca dudak bölgesi korunarak de-identifiye edildi
+        </div>
+      </div>
+      <div class="dataset-card">
+        <div class="dataset-num" style="color:var(--teal);">YT</div>
+        <div class="dataset-label">YouTube kaynaklı veri · Gerçek dünya testi</div>
+        <div class="dataset-detail">
+          <strong>Çeşitli konuşmacılar</strong> ve koşullar<br>
+          Farklı <strong>aydınlatma ve kamera açıları</strong><br>
+          Modelin <strong>sağlamlık sınavı</strong> olarak kullanıldı<br>
+          İki veri seti <strong>hiçbir zaman birleştirilmedi</strong><br>
+          Ayrı test ortamları olarak tutuldu
+        </div>
+      </div>
+    </div>
+    <div class="tech-pills">
+      <span class="tech-pill">Python</span>
+      <span class="tech-pill">PyTorch</span>
+      <span class="tech-pill">MediaPipe</span>
+      <span class="tech-pill">3D CNN</span>
+      <span class="tech-pill">Conformer</span>
+      <span class="tech-pill">Vision Transformer</span>
+      <span class="tech-pill">DINOv2</span>
+      <span class="tech-pill">ConvNeXt</span>
+      <span class="tech-pill">ViViT</span>
+      <span class="tech-pill">AdamW Optimizer</span>
+      <span class="tech-pill">CTC Loss</span>
+      <span class="tech-pill">GPU Cloud</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FUTURE -->
+<section>
+  <div class="section-inner">
+    <div class="section-tag">// gelecek çalışmalar</div>
+    <h2>Sonraki Adımlar</h2>
+    <p class="section-intro">Sistemi gerçek dünya asistif teknolojisine dönüştürecek kritik geliştirme yol haritası.</p>
+    <div class="future-list">
+      <div class="future-item">
+        <div class="future-dot" style="background:var(--accent2);"></div>
+        <div>
+          <div class="future-item-title">LLM Dil Modeli Entegrasyonu</div>
+          <div class="future-item-desc">Büyük dil modeli post-processing ile fonetik belirsizliklerin bağlamsal olarak çözülmesi ve cümle düzeyinde rafine çıktı.</div>
+        </div>
+      </div>
+      <div class="future-item">
+        <div class="future-dot" style="background:var(--teal);"></div>
+        <div>
+          <div class="future-item-title">YouTube Veri Seti Genişletimi</div>
+          <div class="future-item-desc">Binlerce yeni kelime seviyesi video segmentiyle konuşmacı çeşitliliği ve gerçek dünya genellemesi artırılacak.</div>
+        </div>
+      </div>
+      <div class="future-item">
+        <div class="future-dot" style="background:var(--amber);"></div>
+        <div>
+          <div class="future-item-title">Veri Seti Kapasitesi Ölçekleme</div>
+          <div class="future-item-desc">74 katılımcı ve 55 kelime sınırının ötesine geçilmesi; demografik çeşitlilik ve günlük Türkçe ifadeler kapsama dahil edilecek.</div>
+        </div>
+      </div>
+      <div class="future-item">
+        <div class="future-dot" style="background:var(--coral);"></div>
+        <div>
+          <div class="future-item-title">Çok Modlu Füzyon</div>
+          <div class="future-item-desc">Ses sinyali ile görsel verilerin birleştirilmesi, özellikle homofon (görsel olarak özdeş fonem) sorununu kökten çözecek.</div>
+        </div>
+      </div>
+      <div class="future-item">
+        <div class="future-dot" style="background:#ec4899;"></div>
+        <div>
+          <div class="future-item-title">Profil Açısı ve Koşul Çeşitliliği</div>
+          <div class="future-item-desc">Farklı kamera açıları ve aydınlatma koşullarıyla ROI çıkarımının ve uzaysal algının sağlamlığı test edilecek.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="section-inner">
+    <div class="section-tag">// proje ekibi</div>
+    <h2>Geliştirici Ekip</h2>
+    <p class="section-intro">Çankaya Üniversitesi Bilgisayar Mühendisliği bölümü CENG 408 projesi.</p>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="avatar" style="background:rgba(108,99,255,0.15); color:var(--accent2);">CY</div>
+        <div class="team-name">Ceren Yetkinler</div>
+        <div class="team-id">202111029</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:rgba(45,212,191,0.12); color:var(--teal);">ZÖ</div>
+        <div class="team-name">Zeynep Özal</div>
+        <div class="team-id">202211050</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:rgba(251,191,36,0.12); color:var(--amber);">Zİ</div>
+        <div class="team-name">Zeynep Sermin İşler</div>
+        <div class="team-id">202211034</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:rgba(255,107,107,0.12); color:var(--coral);">ŞK</div>
+        <div class="team-name">Şevval Kaymazlı</div>
+        <div class="team-id">202211039</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:rgba(236,72,153,0.12); color:#ec4899;">UA</div>
+        <div class="team-name">Ulya Alpat</div>
+        <div class="team-id">202111063</div>
+      </div>
+    </div>
+    <div style="margin-top:2rem; padding:1.5rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); display:inline-flex; gap:1rem; align-items:center;">
+      <div class="avatar" style="background:rgba(108,99,255,0.15); color:var(--accent2); width:44px; height:44px; font-size:0.85rem;">SA</div>
+      <div>
+        <div style="font-size:0.75rem; color:var(--text3); margin-bottom:2px;">Danışman</div>
+        <div style="font-weight:500; font-size:0.9rem; color:var(--text);">Dr. Öğr. Üyesi Serdar Arslan</div>
+        <div style="font-size:0.78rem; color:var(--text2);">Çankaya Üniversitesi · Bilgisayar Mühendisliği</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div style="margin-bottom:0.75rem;">
+    <a href="#" class="nav-logo" style="font-size:1.3rem;">TLR<span>.</span>system</a>
+  </div>
+  <p>CENG 408 — Bitirme Projesi · <strong>Çankaya Üniversitesi Mühendislik Fakültesi</strong></p>
+  <p style="margin-top:0.5rem;">Bilgisayar Mühendisliği Bölümü · 2025</p>
+</footer>
+
+</body>
+</html>
